@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# framojis
 
-## Getting Started
+Colaboratve griddled emojis all framed up.
 
-First, run the development server:
+## Usage
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Developers
+
+Create an IPNS key:
+
+```js
+import * as Name from 'w3name'
+import { base64 } from 'multiformats/bases/base64'
+
+const name = await Name.create()
+console.log(base64.encode(name.key.bytes))
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Install w3 CLI:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```console
+npm install -g @web3-storage/w3cli
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+Create a web3.storage signer key:
 
-## Learn More
+```console
+w3 key create
+# did:key:z6MkuxojKbmgj3oWSxAEPTzBeamih1NBTJNEfRthCCxvMprd
+MgCZCg4LL3IEsmV1/blIlcrxWALmg9OVH+MCCXPSfG1c4mu0B5nD5RNmwrjKfD2S87eisu23wwR5tdp6l4FV05bY7R+o=
+```
 
-To learn more about Next.js, take a look at the following resources:
+Delegate to the created key:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```console
+w3 delegation create <did_from_w3_key_create_command_above> --base64 --can store/add --can upload/add
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+Set the following environment variables:
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+```
+export IPNS_KEY=...
+export W3_KEY=...
+export W3_PROOF=...
+```

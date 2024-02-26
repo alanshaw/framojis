@@ -1,113 +1,167 @@
-import Image from "next/image";
+import {
+  FrameButton,
+  FrameContainer,
+  FrameImage,
+  FrameInput,
+  FrameReducer,
+  NextServerPageProps,
+  getFrameMessage,
+  getPreviousFrame,
+  useFramesReducer,
+} from 'frames.js/next/server'
+import Link from 'next/link'
+import { ImageResponse } from 'next/og'
+import { DEBUG_HUB_OPTIONS } from './debug/constants'
+import emojiRegex from 'emoji-regex'
+import { base64 } from 'multiformats/bases/base64'
+import * as Name from 'w3name'
+import retry from 'p-retry'
+import { initialData, defaultGridSize, Emoji, Emojis, createW3, putEmoji } from './lib'
+import { Grid, cellSize } from './Grid'
 
-export default function Home() {
+const w3 = await createW3(process.env.W3_KEY ?? 'missing w3 signer key', process.env.W3_PROOF ?? 'missing w3 proof')
+console.log(`📱 agent: ${w3.agent.did()}`)
+console.log(`📦 space: ${w3.currentSpace()?.did()}`)
+
+const name = await Name.from(base64.decode(process.env.IPNS_KEY ?? 'missing IPNS private key'))
+console.log(`🔑 ref: /ipns/${name}`)
+
+type State = {
+  code: string
+  row: number
+  column: number
+}
+
+const gridSize = defaultGridSize
+const dataFileName = 'data.json'
+const imageFileName = 'image.png'
+const gatewayURL = 'https://w3s.link'
+
+const emojisCache = new Map<string, Emojis>()
+
+const initialState = () => ({ code: '', row: 0, column: 0 })
+
+const reducer: FrameReducer<State> = (state, action) => {
+  const data = action.postBody?.untrustedData
+  if (!data) return state
+
+  const [rawCode, rawRow, rawColumn] = (data.inputText ?? '').split(',')
+
+  const matches = emojiRegex().exec(rawCode ?? '')
+  const code = matches?.[0] ?? ''
+
+  const row = parseInt(rawRow ?? '0')
+  const column = parseInt(rawColumn ?? '0')
+
+  return { code, row: isNaN(row) ? 0 : row, column: isNaN(column) ? 0 : column }
+}
+
+export default async function Home ({ searchParams }: NextServerPageProps) {
+  const previousFrame = getPreviousFrame<State>(searchParams)
+
+  const frameMessage = await getFrameMessage(previousFrame.postBody, { ...DEBUG_HUB_OPTIONS })
+  if (frameMessage && !frameMessage?.isValid) {
+    throw new Error('Invalid frame payload')
+  }
+
+  const [state] = useFramesReducer<State>(reducer, initialState(), previousFrame)
+  console.log('🧳 state:', state)
+
+  const baseURL = process.env.NEXT_PUBLIC_HOST || 'http://localhost:3000'
+
+  let revision = await retry(async () => {
+    try {
+      console.log(`👀 resolving: /ipns/${name}`)
+      return await Name.resolve(name)
+    } catch (err: any) {
+      if (!err.message.startsWith('record not found')) throw err
+
+      console.warn('🆕 initializing data:', err)
+      const emojis = initialData<Emoji>(gridSize)
+      const dataFile = new File([JSON.stringify(emojis)], dataFileName)
+      const imageFile = new File([await renderGrid(emojis)], imageFileName)
+
+      const root = await w3.uploadDirectory([dataFile, imageFile])
+      const value = `/ipfs/${root}`
+
+      const revision = await Name.v0(name, value)
+      await Name.publish(revision, name.key)
+
+      emojisCache.set(value, emojis)
+      return revision
+    }
+  }, { onFailedAttempt: err => console.warn(`failed to resolve, attempt: ${err.attemptNumber}`) })
+  console.log(`🔢 revision: ${revision.value}`)
+
+  let emojis = emojisCache.get(revision.value)
+  if (!emojis) {
+    const url = `${gatewayURL}${revision.value}/${dataFileName}`
+    console.log(`🌍 fetching emojis: ${url}`)
+    emojis = await retry(async () => {
+      const res = await fetch(url, { next: { revalidate: 3600 * 24 /* 24 hours */ } })
+      return await res.json() as Emojis
+    }, { onFailedAttempt: err => console.warn(`failed to fetch emojis, attempt: ${err.attemptNumber}`) })
+    emojisCache.set(revision.value, emojis)
+  }
+  console.log('💿 emojis data loaded')
+
+  try {
+    if (!state.code || !state.row || !state.column) {
+      throw new Error('missing state')
+    }
+
+    const { fid, messageHash } = previousFrame.postBody?.untrustedData ?? {}
+    if (fid == null || messageHash == null) {
+      throw new Error('missing untrustedData')
+    }
+
+    putEmoji(emojis, fid, messageHash, state.code, state.row - 1, state.column - 1)
+
+    console.log(`🎨 rendering image`)
+    const dataFile = new File([JSON.stringify(emojis)], dataFileName)
+    const imageFile = new File([await renderGrid(emojis)], imageFileName)
+
+    console.log(`💾 uploading new data`)
+    const root = await w3.uploadDirectory([dataFile, imageFile])
+    const value = `/ipfs/${root}`
+    
+    console.log(`🔑 updating IPNS ref`)
+    revision = await Name.increment(revision, value)
+    await Name.publish(revision, name.key)
+    console.log(`🔢 new revision: ${value}`)
+
+    emojisCache.set(value, emojis)
+    console.log('🎉 emojis updated')
+  } catch (err: any) {
+    if (err.message !== 'missing state') {
+      console.error(`💥 failed to update emojis`, err)
+    }
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    <div className='p-4'>
+      frames.js starter kit. The Template Frame is on this page, it&apos;s in
+      the html meta tags (inspect source).{' '}
+      <Link href={`/debug?url=${baseURL}`} className='underline'>
+        Debug
+      </Link>
+      <FrameContainer
+        postUrl='/frames'
+        pathname='/'
+        state={state}
+        previousFrame={previousFrame}
+      >
+        <FrameImage aspectRatio='1:1' src={`${gatewayURL}${revision.value}/${imageFileName}`} />
+        <FrameInput text='emoji,row,column e.g. 😀,1,3' />
+        <FrameButton>Place emoji</FrameButton>
+      </FrameContainer>
+    </div>
+  )
+}
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
+const renderGrid = async (emojis: Emojis) => {
+  const width = ((defaultGridSize + 1) * cellSize) + 10
+  const height = width
+  const res = new ImageResponse(<Grid emojis={emojis} />, { width, height })
+  return new Uint8Array(await res.arrayBuffer())
 }
