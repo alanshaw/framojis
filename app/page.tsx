@@ -61,9 +61,9 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
   const [state] = useFramesReducer<State>(reducer, initialState(), previousFrame)
   console.log('🧳 state:', state)
 
-  // const w3 = await createW3(process.env.W3_KEY ?? 'missing w3 signer key', process.env.W3_PROOF ?? 'missing w3 proof')
-  // console.log(`📱 agent: ${w3.agent.did()}`)
-  // console.log(`📦 space: ${w3.currentSpace()?.did()}`)
+  const w3 = await createW3(process.env.W3_KEY ?? 'missing w3 signer key', process.env.W3_PROOF ?? 'missing w3 proof')
+  console.log(`📱 agent: ${w3.agent.did()}`)
+  console.log(`📦 space: ${w3.currentSpace()?.did()}`)
 
   const name = await Name.from(base64.decode(process.env.IPNS_KEY ?? 'missing IPNS private key'))
   console.log(`🔑 ref: /ipns/${name}`)
