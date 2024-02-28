@@ -1,6 +1,6 @@
 import { base64 } from 'multiformats/bases/base64'
 import { parse as parseLink } from 'multiformats/link'
-import * as Client from '@web3-storage/w3up-client'
+import { create as createClient } from '@web3-storage/w3up-client'
 import { StoreMemory } from '@web3-storage/w3up-client/stores/memory'
 import * as Signer from '@ucanto/principal/ed25519'
 import { importDAG } from '@ucanto/core/delegation'
@@ -29,8 +29,8 @@ export function initialData<T> (size: number) {
 }
 
 export const createW3 = async (key: string, proof: string) => {
-  const client = await Client.create({ principal: Signer.parse(key), store: new StoreMemory() })
-  await client.addSpace(await parseProof(proof))
+  const client = await createClient({ principal: Signer.parse(key), store: new StoreMemory() })
+  // await client.addSpace(await parseProof(proof))
   return client
 }
 
