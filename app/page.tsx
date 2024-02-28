@@ -19,7 +19,7 @@ import retry from 'p-retry'
 import { initialData, defaultGridSize, Emoji, Emojis, createW3, putEmoji } from './lib'
 import { Grid, cellSize } from './Grid'
 
-const ts = 1709147140199
+const ts = 1709146437157
 const grace = 1000 * 60 * 10
 
 type State = {
@@ -52,10 +52,11 @@ const reducer: FrameReducer<State> = (state, action) => {
   return { code, row: isNaN(row) ? 0 : row, column: isNaN(column) ? 0 : column }
 }
 
-export default async function Home ({ params, searchParams }: NextServerPageProps) {
+export default async function Home ({ searchParams }: NextServerPageProps) {
   const previousFrame = getPreviousFrame<State>(searchParams)
 
   const frameMessage = await getFrameMessage(previousFrame.postBody, { ...DEBUG_HUB_OPTIONS })
+  console.log('!frameMessage?.isValid', !frameMessage?.isValid)
   if (frameMessage && !frameMessage?.isValid) {
     throw new Error('Invalid frame payload')
   }
@@ -63,18 +64,18 @@ export default async function Home ({ params, searchParams }: NextServerPageProp
   const [state] = useFramesReducer<State>(reducer, initialState(), previousFrame)
   console.log('🧳 state:', state)
 
-  console.log(Date.now(), '<', ts + grace)
   if (Date.now() < ts + grace) {
-    console.log('in grace period')
     return (
       <div>
         <FrameContainer postUrl="/frames" pathname="/" state={state} previousFrame={previousFrame}>
-          <FrameImage aspectRatio='1:1'><div /></FrameImage>
+          <FrameImage aspectRatio='1:1'>
+            <Grid emojis={initialData<Emoji>(gridSize)} />
+          </FrameImage>
           <FrameInput text='emoji,row,column e.g. 😀,1,3' />
           <FrameButton>Place emoji</FrameButton>
         </FrameContainer>
       </div>
-    )
+    );
   }
 
   const w3 = await createW3(process.env.W3_KEY ?? 'missing w3 signer key', process.env.W3_PROOF ?? 'missing w3 proof')
