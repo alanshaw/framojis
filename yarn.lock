@@ -587,7 +587,7 @@
     multiformats "^11.0.2"
     one-webcrypto "^1.0.3"
 
-"@ucanto/transport@^9.0.0":
+"@ucanto/transport@^9.0.0", "@ucanto/transport@^9.1.0":
   version "9.1.0"
   resolved "https://registry.yarnpkg.com/@ucanto/transport/-/transport-9.1.0.tgz#e37026d0cd389604cf85f62d7dc165ca5de50f06"
   integrity sha512-3pLXEg9YIH0NN1faBh0Xaioxbb2JtPL+4AFtQtmO8LnRyqGnTahZwwaM8XFL5eMBAp0pYDoZaQ6wdMce0t1cAQ==
