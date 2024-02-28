@@ -16,7 +16,7 @@ const nextConfig = {
     const plugins = config.plugins ?? []
     plugins.push(new ctx.webpack.NormalModuleReplacementPlugin(
       /fr32-sha2-256-trunc254-padded-binary-tree-multihash\/async/,
-      '../../../../../app/fake-piece-hasher'
+      '../../../../../fake-piece-hasher.js'
     ))
     return { ...config, plugins }
   }
