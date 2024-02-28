@@ -19,7 +19,7 @@ import retry from 'p-retry'
 import { initialData, defaultGridSize, Emoji, Emojis, createW3, putEmoji } from './lib'
 import { Grid, cellSize } from './Grid'
 
-const ts = 1709146437157
+const ts = 1709146739538
 const grace = 1000 * 60 * 10
 
 type State = {
@@ -67,9 +67,7 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
     return (
       <div>
         <FrameContainer postUrl="/frames" pathname="/" state={state} previousFrame={previousFrame}>
-          <FrameImage aspectRatio='1:1'>
-            <Grid emojis={initialData<Emoji>(gridSize)} />
-          </FrameImage>
+          <FrameImage aspectRatio='1:1'></FrameImage>
           <FrameInput text='emoji,row,column e.g. 😀,1,3' />
           <FrameButton>Place emoji</FrameButton>
         </FrameContainer>
