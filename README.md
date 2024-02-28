@@ -1,6 +1,6 @@
 # framojis
 
-Colaboratve griddled emojis all framed up.
+Collaborative griddled emojis all framed up.
 
 ## Usage
 
