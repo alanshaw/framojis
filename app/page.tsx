@@ -53,7 +53,6 @@ const reducer: FrameReducer<State> = (state, action) => {
 }
 
 export default async function Home ({ params, searchParams }: NextServerPageProps) {
-  console.log(params)
   const previousFrame = getPreviousFrame<State>(searchParams)
 
   const frameMessage = await getFrameMessage(previousFrame.postBody, { ...DEBUG_HUB_OPTIONS })
@@ -64,6 +63,7 @@ export default async function Home ({ params, searchParams }: NextServerPageProp
   const [state] = useFramesReducer<State>(reducer, initialState(), previousFrame)
   console.log('🧳 state:', state)
 
+  console.log(Date.now(), '<', ts + grace)
   if (Date.now() < ts + grace) {
     console.log('in grace period')
     return (
