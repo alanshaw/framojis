@@ -11,7 +11,7 @@ import {
 } from 'frames.js/next/server'
 import Link from 'next/link'
 import { ImageResponse } from 'next/og'
-import { DEBUG_HUB_OPTIONS } from './_debug/constants'
+import { DEBUG_HUB_OPTIONS } from './debug/constants'
 import emojiRegex from 'emoji-regex'
 import { base64 } from 'multiformats/bases/base64'
 import * as Name from 'w3name'
