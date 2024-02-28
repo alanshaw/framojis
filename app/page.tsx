@@ -60,6 +60,9 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
     throw new Error('Invalid frame payload')
   }
 
+  const [state] = useFramesReducer<State>(reducer, initialState(), previousFrame)
+  console.log('🧳 state:', state)
+
   if (Date.now() < ts + grace) {
     return (
       <div>
@@ -80,9 +83,6 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
 
   const name = await Name.from(base64.decode(process.env.IPNS_KEY ?? 'missing IPNS private key'))
   console.log(`🔑 ref: /ipns/${name}`)
-
-  const [state] = useFramesReducer<State>(reducer, initialState(), previousFrame)
-  console.log('🧳 state:', state)
 
   const baseURL = process.env.NEXT_PUBLIC_HOST || 'http://localhost:3000'
 
