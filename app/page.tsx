@@ -11,20 +11,13 @@ import {
 } from 'frames.js/next/server'
 import Link from 'next/link'
 import { ImageResponse } from 'next/og'
-import { DEBUG_HUB_OPTIONS } from './debug/constants'
+import { DEBUG_HUB_OPTIONS } from './_debug/constants'
 import emojiRegex from 'emoji-regex'
 import { base64 } from 'multiformats/bases/base64'
 import * as Name from 'w3name'
 import retry from 'p-retry'
 import { initialData, defaultGridSize, Emoji, Emojis, createW3, putEmoji } from './lib'
 import { Grid, cellSize } from './Grid'
-
-const w3 = await createW3(process.env.W3_KEY ?? 'missing w3 signer key', process.env.W3_PROOF ?? 'missing w3 proof')
-console.log(`📱 agent: ${w3.agent.did()}`)
-console.log(`📦 space: ${w3.currentSpace()?.did()}`)
-
-const name = await Name.from(base64.decode(process.env.IPNS_KEY ?? 'missing IPNS private key'))
-console.log(`🔑 ref: /ipns/${name}`)
 
 type State = {
   code: string
@@ -63,6 +56,13 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
   if (frameMessage && !frameMessage?.isValid) {
     throw new Error('Invalid frame payload')
   }
+
+  const w3 = await createW3(process.env.W3_KEY ?? 'missing w3 signer key', process.env.W3_PROOF ?? 'missing w3 proof')
+  console.log(`📱 agent: ${w3.agent.did()}`)
+  console.log(`📦 space: ${w3.currentSpace()?.did()}`)
+
+  const name = await Name.from(base64.decode(process.env.IPNS_KEY ?? 'missing IPNS private key'))
+  console.log(`🔑 ref: /ipns/${name}`)
 
   const [state] = useFramesReducer<State>(reducer, initialState(), previousFrame)
   console.log('🧳 state:', state)
