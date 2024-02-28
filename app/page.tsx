@@ -61,26 +61,24 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
   const [state] = useFramesReducer<State>(reducer, initialState(), previousFrame)
   console.log('🧳 state:', state)
 
-  const w3 = await createW3(process.env.W3_KEY ?? 'missing w3 signer key', process.env.W3_PROOF ?? 'missing w3 proof')
-  console.log(`📱 agent: ${w3.agent.did()}`)
-  console.log(`📦 space: ${w3.currentSpace()?.did()}`)
+  // const w3 = await createW3(process.env.W3_KEY ?? 'missing w3 signer key', process.env.W3_PROOF ?? 'missing w3 proof')
+  // console.log(`📱 agent: ${w3.agent.did()}`)
+  // console.log(`📦 space: ${w3.currentSpace()?.did()}`)
 
-  // if (Date.now() < ts + grace) {
-    return (
-      <div>
-        <FrameContainer postUrl="/frames" pathname="/" state={state} previousFrame={previousFrame}>
-          <FrameImage aspectRatio='1:1'>
-            <Grid emojis={initialData<Emoji>(gridSize)} />
-          </FrameImage>
-          <FrameInput text='emoji,row,column e.g. 😀,1,3' />
-          <FrameButton>Place emoji</FrameButton>
-        </FrameContainer>
-      </div>
-    );
-  // }
+  const name = await Name.from(base64.decode(process.env.IPNS_KEY ?? 'missing IPNS private key'))
+  console.log(`🔑 ref: /ipns/${name}`)
 
-  // const name = await Name.from(base64.decode(process.env.IPNS_KEY ?? 'missing IPNS private key'))
-  // console.log(`🔑 ref: /ipns/${name}`)
+  return (
+    <div>
+      <FrameContainer postUrl="/frames" pathname="/" state={state} previousFrame={previousFrame}>
+        <FrameImage aspectRatio='1:1'>
+          <Grid emojis={initialData<Emoji>(gridSize)} />
+        </FrameImage>
+        <FrameInput text='emoji,row,column e.g. 😀,1,3' />
+        <FrameButton>Place emoji</FrameButton>
+      </FrameContainer>
+    </div>
+  )
 
   // const baseURL = process.env.NEXT_PUBLIC_HOST || 'http://localhost:3000'
 
