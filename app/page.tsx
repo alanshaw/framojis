@@ -20,7 +20,7 @@ import { initialData, defaultGridSize, Emoji, Emojis, createW3, putEmoji } from 
 import { Grid, cellSize } from './Grid'
 
 const ts = 1709146437157
-const grace = 1000 * 60 * 5
+const grace = 1000 * 60 * 10
 
 type State = {
   code: string
