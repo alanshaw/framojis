@@ -19,7 +19,7 @@ import retry from 'p-retry'
 import { initialData, defaultGridSize, Emoji, Emojis, createW3, putEmoji } from './lib'
 import { Grid, cellSize } from './Grid'
 
-const ts = 1709146739538
+const ts = 1709147140199
 const grace = 1000 * 60 * 10
 
 type State = {
@@ -65,6 +65,7 @@ export default async function Home ({ params, searchParams }: NextServerPageProp
   console.log('🧳 state:', state)
 
   if (Date.now() < ts + grace) {
+    console.log('in grace period')
     return (
       <div>
         <FrameContainer postUrl="/frames" pathname="/" state={state} previousFrame={previousFrame}>
