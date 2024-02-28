@@ -52,7 +52,8 @@ const reducer: FrameReducer<State> = (state, action) => {
   return { code, row: isNaN(row) ? 0 : row, column: isNaN(column) ? 0 : column }
 }
 
-export default async function Home ({ searchParams }: NextServerPageProps) {
+export default async function Home ({ params, searchParams }: NextServerPageProps) {
+  console.log(params)
   const previousFrame = getPreviousFrame<State>(searchParams)
 
   const frameMessage = await getFrameMessage(previousFrame.postBody, { ...DEBUG_HUB_OPTIONS })
@@ -67,12 +68,12 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
     return (
       <div>
         <FrameContainer postUrl="/frames" pathname="/" state={state} previousFrame={previousFrame}>
-          <FrameImage aspectRatio='1:1'></FrameImage>
+          <FrameImage aspectRatio='1:1'><div /></FrameImage>
           <FrameInput text='emoji,row,column e.g. 😀,1,3' />
           <FrameButton>Place emoji</FrameButton>
         </FrameContainer>
       </div>
-    );
+    )
   }
 
   const w3 = await createW3(process.env.W3_KEY ?? 'missing w3 signer key', process.env.W3_PROOF ?? 'missing w3 proof')
