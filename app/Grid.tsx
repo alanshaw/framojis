@@ -1,3 +1,4 @@
+import { ImageResponse } from 'next/og'
 import { Emojis } from './lib'
 
 export const cellSize = 32
@@ -35,6 +36,13 @@ export function Grid ({ emojis }: { emojis: Emojis }) {
       {rows}
     </div>
   )
+}
+
+export const render = async (emojis: Emojis) => {
+  const width = getWidth(emojis) + 10
+  const height = width
+  const res = new ImageResponse(<Grid emojis={emojis} />, { width, height })
+  return new Uint8Array(await res.arrayBuffer())
 }
 
 export const getWidth = (emojis: Emojis) => (emojis.length + 1) * cellSize

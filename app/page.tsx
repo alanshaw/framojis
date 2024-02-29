@@ -10,7 +10,6 @@ import {
   useFramesReducer,
 } from 'frames.js/next/server'
 import Link from 'next/link'
-import { ImageResponse } from 'next/og'
 import { DEBUG_HUB_OPTIONS } from './debug/constants'
 import emojiRegex from 'emoji-regex'
 import { base64 } from 'multiformats/bases/base64'
@@ -18,7 +17,7 @@ import * as Name from 'w3name'
 import retry from 'p-retry'
 import { initialData, Emoji, Emojis, createW3, putEmoji } from './lib'
 import { gridSize, dataFileName, imageFileName, gatewayURL } from './constants'
-import { Grid, getWidth } from './Grid'
+import * as Grid from './Grid'
 import Image from 'next/image'
 
 type State = {
@@ -78,18 +77,17 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
       console.warn('🆕 initializing data:', err)
       const emojis = initialData<Emoji>(gridSize)
       const dataFile = new File([JSON.stringify(emojis)], dataFileName)
-      const imageFile = new File([await renderGrid(emojis)], imageFileName)
+      const imageFile = new File([await Grid.render(emojis)], imageFileName)
 
       const root = await w3.uploadDirectory([dataFile, imageFile])
-      const value = `/ipfs/${root}`
+      const revision = await Name.v0(name, `/ipfs/${root}`)
 
-      const revision = await Name.v0(name, value)
       await Name.publish(revision, name.key)
+      emojisCache.set(revision.value, emojis)
 
-      emojisCache.set(value, emojis)
       return revision
     }
-  }, { onFailedAttempt: err => console.warn(`failed to resolve, attempt: ${err.attemptNumber}`) })
+  }, { onFailedAttempt: err => console.warn(`failed to resolve: ${err.message}, attempt: ${err.attemptNumber}`) })
   console.log(`🔢 revision: ${revision.value}`)
 
   let emojis = emojisCache.get(revision.value)
@@ -118,8 +116,8 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
     putEmoji(emojis, fid, messageHash, state.code, state.row - 1, state.column - 1)
 
     console.log(`🎨 rendering image`)
-    const dataFile = Object.assign(new Blob([JSON.stringify(emojis)]), { name: dataFileName })
-    const imageFile = Object.assign(new Blob([await renderGrid(emojis)]), { name: imageFileName })
+    const dataFile = new File([JSON.stringify(emojis)], dataFileName)
+    const imageFile = new File([await Grid.render(emojis)], imageFileName)
 
     console.log(`💾 uploading new data`)
     const root = await w3.uploadDirectory([dataFile, imageFile])
@@ -144,7 +142,7 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
       <Link href={`/debug?url=${baseURL}`} className='underline float-right'>
         Debug
       </Link>
-      <Image src={`${gatewayURL}${revision.value}/${imageFileName}`} alt='framjoi grid' width={getWidth(emojis)/2} height={getWidth(emojis)/2} />
+      <Image src={`${gatewayURL}${revision.value}/${imageFileName}`} alt='framjoi grid' width={Grid.getWidth(emojis)/2} height={Grid.getWidth(emojis)/2} />
       <FrameContainer
         postUrl='/frames'
         pathname='/'
@@ -159,9 +157,4 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
   )
 }
 
-const renderGrid = async (emojis: Emojis) => {
-  const width = getWidth(emojis) + 10
-  const height = width
-  const res = new ImageResponse(<Grid emojis={emojis} />, { width, height })
-  return new Uint8Array(await res.arrayBuffer())
-}
+
