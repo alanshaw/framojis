@@ -65,9 +65,7 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
   const name = await Name.from(base64.decode(process.env.IPNS_KEY ?? 'missing IPNS private key'))
   console.log(`🔑 ref: /ipns/${name}`)
 
-  const baseURL = process.env.NEXT_PUBLIC_HOST
-    || (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : null)
-    || 'http://localhost:3000'
+  const baseURL = process.env.NEXT_PUBLIC_HOST || 'http://localhost:3000'
 
   let revision = await retry(async () => {
     try {
