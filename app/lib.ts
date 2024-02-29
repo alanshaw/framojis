@@ -15,8 +15,6 @@ export interface Emoji {
   messageHash: string
 }
 
-export const defaultGridSize = 25
-
 export function initialData<T> (size: number) {
   const data: (T|null)[][] = []
   for (let i = 0; i < size; i++) {

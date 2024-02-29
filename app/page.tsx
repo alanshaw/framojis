@@ -16,8 +16,9 @@ import emojiRegex from 'emoji-regex'
 import { base64 } from 'multiformats/bases/base64'
 import * as Name from 'w3name'
 import retry from 'p-retry'
-import { initialData, defaultGridSize, Emoji, Emojis, createW3, putEmoji } from './lib'
-import { Grid, cellSize, getWidth } from './Grid'
+import { initialData, Emoji, Emojis, createW3, putEmoji } from './lib'
+import { gridSize, dataFileName, imageFileName, gatewayURL } from './constants'
+import { Grid, getWidth } from './Grid'
 import Image from 'next/image'
 
 type State = {
@@ -26,10 +27,7 @@ type State = {
   column: number
 }
 
-const gridSize = defaultGridSize
-const dataFileName = 'data.json'
-const imageFileName = 'image.png'
-const gatewayURL = 'https://w3s.link'
+export const fetchCache = 'force-no-store'
 
 const emojisCache = new Map<string, Emojis>()
 
@@ -97,7 +95,7 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
   let emojis = emojisCache.get(revision.value)
   if (!emojis) {
     const url = `${gatewayURL}${revision.value}/${dataFileName}`
-    console.log(`🌍 fetching emojis: ${url}`)
+    console.log(`🐶 fetching emojis: ${url}`)
     emojis = await retry(async () => {
       const res = await fetch(url, { next: { revalidate: 3600 * 24 /* 24 hours */ } })
       return await res.json() as Emojis
@@ -106,6 +104,7 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
   }
   console.log('💿 emojis data loaded')
 
+  let updated = false
   try {
     if (!state.code || !state.row || !state.column) {
       throw new Error('missing state')
@@ -133,6 +132,7 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
 
     emojisCache.set(value, emojis)
     console.log('🎉 emojis updated')
+    updated = true
   } catch (err: any) {
     if (err.message !== 'missing state') {
       console.error(`💥 failed to update emojis`, err)
@@ -151,7 +151,7 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
         state={state}
         previousFrame={previousFrame}
       >
-        <FrameImage aspectRatio='1:1' src={`${gatewayURL}${revision.value}/${imageFileName}`} />
+        <FrameImage aspectRatio='1:1' src={new URL(`/image${updated ? `?${encodeURIComponent(revision.value)}` : ''}`, baseURL).toString()} />
         <FrameInput text='emoji,row,column e.g. 😀,1,3' />
         <FrameButton>Place emoji</FrameButton>
       </FrameContainer>
@@ -160,7 +160,7 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
 }
 
 const renderGrid = async (emojis: Emojis) => {
-  const width = ((defaultGridSize + 1) * cellSize) + 10
+  const width = getWidth(emojis) + 10
   const height = width
   const res = new ImageResponse(<Grid emojis={emojis} />, { width, height })
   return new Uint8Array(await res.arrayBuffer())
