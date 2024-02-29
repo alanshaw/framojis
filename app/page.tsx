@@ -17,7 +17,8 @@ import { base64 } from 'multiformats/bases/base64'
 import * as Name from 'w3name'
 import retry from 'p-retry'
 import { initialData, defaultGridSize, Emoji, Emojis, createW3, putEmoji } from './lib'
-import { Grid, cellSize } from './Grid'
+import { Grid, cellSize, getWidth } from './Grid'
+import Image from 'next/image'
 
 type State = {
   code: string
@@ -140,11 +141,10 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
 
   return (
     <div className='p-4'>
-      frames.js starter kit. The Template Frame is on this page, it&apos;s in
-      the html meta tags (inspect source).{' '}
-      <Link href={`/debug?url=${baseURL}`} className='underline'>
+      <Link href={`/debug?url=${baseURL}`} className='underline float-right'>
         Debug
       </Link>
+      <Image src={`${gatewayURL}${revision.value}/${imageFileName}`} alt='framjoi grid' width={getWidth(emojis)/2} height={getWidth(emojis)/2} />
       <FrameContainer
         postUrl='/frames'
         pathname='/'

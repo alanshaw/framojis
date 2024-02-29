@@ -1,8 +1,8 @@
-import { Emoji } from './lib'
+import { Emojis } from './lib'
 
 export const cellSize = 32
 
-export function Grid ({ emojis }: { emojis: Array<Array<Emoji|null>> }) {
+export function Grid ({ emojis }: { emojis: Emojis }) {
   const gridSize = emojis.length
   const rowStyle = { display: 'flex' }
   const cellStyle = { display: 'flex', justifyContent: 'center', alignItems: 'center', width: cellSize, height: cellSize, fontSize: cellSize }
@@ -25,7 +25,7 @@ export function Grid ({ emojis }: { emojis: Array<Array<Emoji|null>> }) {
     rows.push(<div style={rowStyle}>{items}</div>)
   }
 
-  const width = (gridSize + 1) * cellSize
+  const width = getWidth(emojis)
   const height = width
 
   return (
@@ -34,3 +34,5 @@ export function Grid ({ emojis }: { emojis: Array<Array<Emoji|null>> }) {
     </div>
   )
 }
+
+export const getWidth = (emojis: Emojis) => (emojis.length + 1) * cellSize
