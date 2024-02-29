@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og'
-import { Grid, cellSize } from '../Grid'
-import { initialData, defaultGridSize, Emoji } from '../lib'
+import { Grid, getWidth } from '../Grid'
+import { initialData, Emoji } from '../lib'
+import { gridSize } from '../constants'
  
 export const runtime = 'edge'
 
@@ -24,11 +25,11 @@ function addRandomEmojis (num: number, data: Array<Array<Emoji|null>>) {
  
 export async function GET (request: Request) {
   try {
-    const width = ((defaultGridSize + 1) * cellSize) + 10
-    const height = width
-
-    const emojis = initialData<Emoji>(defaultGridSize)
+    const emojis = initialData<Emoji>(gridSize)
     addRandomEmojis(20, emojis)
+
+    const width = getWidth(emojis) + 10
+    const height = width
  
     const res = new ImageResponse(
       <Grid emojis={emojis} />,
