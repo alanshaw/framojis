@@ -29,9 +29,14 @@ export function initialData<T> (size: number) {
 }
 
 export const createW3 = async (key: string, proof: string) => {
-  const client = await createClient({ principal: parsePrincipal(key), store: new StoreMemory() })
-  await client.addSpace(await parseProof(proof))
-  return client
+  console.log('createW3...')
+  try {
+    const client = await createClient({ principal: parsePrincipal(key), store: new StoreMemory() })
+    await client.addSpace(await parseProof(proof))
+    return client
+  } catch (err) {
+    console.log(err)
+  }
 }
 
 export const parseProof = async (data: string) => {

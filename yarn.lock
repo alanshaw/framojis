@@ -727,6 +727,15 @@
     multiformats "^11.0.2"
     sync-multihash-sha2 "^1.0.0"
 
+"@web3-storage/data-segment@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@web3-storage/data-segment/-/data-segment-5.0.0.tgz#1a55f97be162116cfe8597773e6f5c34dd849ff8"
+  integrity sha512-5CbElsxec2DsKhEHEh3XRGISAyna+bCjKjjvFrLcYyXLCaiSt/nF3ypcllxwjpE4newMUArymGKGzzZnRWL2kg==
+  dependencies:
+    "@ipld/dag-cbor" "^9.0.5"
+    multiformats "^11.0.2"
+    sync-multihash-sha2 "^1.0.0"
+
 "@web3-storage/did-mailto@^2.1.0":
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/@web3-storage/did-mailto/-/did-mailto-2.1.0.tgz#4ba7bd52772e48181d78ece0bdc27728857e919e"
