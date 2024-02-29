@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import retry from 'p-retry'
 import { imageFileName, gatewayURL } from '../constants'
 
+export const runtime = 'edge'
 export const fetchCache = 'force-no-store'
 
 export async function GET (request: Request) {
