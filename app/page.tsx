@@ -76,8 +76,8 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
 
       console.warn('🆕 initializing data:', err)
       const emojis = initialData<Emoji>(gridSize)
-      const dataFile = new File([JSON.stringify(emojis)], dataFileName)
-      const imageFile = new File([await Grid.render(emojis)], imageFileName)
+      const dataFile = Object.assign(new Blob([JSON.stringify(emojis)]), { name: dataFileName })
+      const imageFile = Object.assign(new Blob([await Grid.render(emojis)]), { name: imageFileName })
 
       const root = await w3.uploadDirectory([dataFile, imageFile])
       const revision = await Name.v0(name, `/ipfs/${root}`)
@@ -116,8 +116,8 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
     putEmoji(emojis, fid, messageHash, state.code, state.row - 1, state.column - 1)
 
     console.log(`🎨 rendering image`)
-    const dataFile = new File([JSON.stringify(emojis)], dataFileName)
-    const imageFile = new File([await Grid.render(emojis)], imageFileName)
+    const dataFile = Object.assign(new Blob([JSON.stringify(emojis)]), { name: dataFileName })
+    const imageFile = Object.assign(new Blob([await Grid.render(emojis)]), { name: imageFileName })
 
     console.log(`💾 uploading new data`)
     const root = await w3.uploadDirectory([dataFile, imageFile])
