@@ -36,6 +36,7 @@ export const createW3 = async (key: string, proof: string) => {
     return client
   } catch (err) {
     console.log(err)
+    throw err
   }
 }
 
