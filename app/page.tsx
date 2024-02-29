@@ -53,7 +53,6 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
   const previousFrame = getPreviousFrame<State>(searchParams)
 
   const frameMessage = await getFrameMessage(previousFrame.postBody, { ...DEBUG_HUB_OPTIONS })
-  console.log('!frameMessage?.isValid', !frameMessage?.isValid)
   if (frameMessage && !frameMessage?.isValid) {
     throw new Error('Invalid frame payload')
   }
@@ -68,108 +67,96 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
   const name = await Name.from(base64.decode(process.env.IPNS_KEY ?? 'missing IPNS private key'))
   console.log(`🔑 ref: /ipns/${name}`)
 
+  const baseURL = process.env.NEXT_PUBLIC_HOST || 'http://localhost:3000'
+
+  let revision = await retry(async () => {
+    try {
+      console.log(`👀 resolving: /ipns/${name}`)
+      return await Name.resolve(name)
+    } catch (err: any) {
+      if (!err.message.startsWith('record not found')) throw err
+
+      console.warn('🆕 initializing data:', err)
+      const emojis = initialData<Emoji>(gridSize)
+      const dataFile = new File([JSON.stringify(emojis)], dataFileName)
+      const imageFile = new File([await renderGrid(emojis)], imageFileName)
+
+      const root = await w3.uploadDirectory([dataFile, imageFile])
+      const value = `/ipfs/${root}`
+
+      const revision = await Name.v0(name, value)
+      await Name.publish(revision, name.key)
+
+      emojisCache.set(value, emojis)
+      return revision
+    }
+  }, { onFailedAttempt: err => console.warn(`failed to resolve, attempt: ${err.attemptNumber}`) })
+  console.log(`🔢 revision: ${revision.value}`)
+
+  let emojis = emojisCache.get(revision.value)
+  if (!emojis) {
+    const url = `${gatewayURL}${revision.value}/${dataFileName}`
+    console.log(`🌍 fetching emojis: ${url}`)
+    emojis = await retry(async () => {
+      const res = await fetch(url, { next: { revalidate: 3600 * 24 /* 24 hours */ } })
+      return await res.json() as Emojis
+    }, { onFailedAttempt: err => console.warn(`failed to fetch emojis, attempt: ${err.attemptNumber}`) })
+    emojisCache.set(revision.value, emojis)
+  }
+  console.log('💿 emojis data loaded')
+
+  try {
+    if (!state.code || !state.row || !state.column) {
+      throw new Error('missing state')
+    }
+
+    const { fid, messageHash } = previousFrame.postBody?.untrustedData ?? {}
+    if (fid == null || messageHash == null) {
+      throw new Error('missing untrustedData')
+    }
+
+    putEmoji(emojis, fid, messageHash, state.code, state.row - 1, state.column - 1)
+
+    console.log(`🎨 rendering image`)
+    const dataFile = new File([JSON.stringify(emojis)], dataFileName)
+    const imageFile = new File([await renderGrid(emojis)], imageFileName)
+
+    console.log(`💾 uploading new data`)
+    const root = await w3.uploadDirectory([dataFile, imageFile])
+    const value = `/ipfs/${root}`
+    
+    console.log(`🔑 updating IPNS ref`)
+    revision = await Name.increment(revision, value)
+    await Name.publish(revision, name.key)
+    console.log(`🔢 new revision: ${value}`)
+
+    emojisCache.set(value, emojis)
+    console.log('🎉 emojis updated')
+  } catch (err: any) {
+    if (err.message !== 'missing state') {
+      console.error(`💥 failed to update emojis`, err)
+    }
+  }
+
   return (
-    <div>
-      <FrameContainer postUrl="/frames" pathname="/" state={state} previousFrame={previousFrame}>
-        <FrameImage aspectRatio='1:1'>
-          <Grid emojis={initialData<Emoji>(gridSize)} />
-        </FrameImage>
+    <div className='p-4'>
+      frames.js starter kit. The Template Frame is on this page, it&apos;s in
+      the html meta tags (inspect source).{' '}
+      <Link href={`/debug?url=${baseURL}`} className='underline'>
+        Debug
+      </Link>
+      <FrameContainer
+        postUrl='/frames'
+        pathname='/'
+        state={state}
+        previousFrame={previousFrame}
+      >
+        <FrameImage aspectRatio='1:1' src={`${gatewayURL}${revision.value}/${imageFileName}`} />
         <FrameInput text='emoji,row,column e.g. 😀,1,3' />
         <FrameButton>Place emoji</FrameButton>
       </FrameContainer>
     </div>
   )
-
-  // const baseURL = process.env.NEXT_PUBLIC_HOST || 'http://localhost:3000'
-
-  // let revision = await retry(async () => {
-  //   try {
-  //     console.log(`👀 resolving: /ipns/${name}`)
-  //     return await Name.resolve(name)
-  //   } catch (err: any) {
-  //     if (!err.message.startsWith('record not found')) throw err
-
-  //     console.warn('🆕 initializing data:', err)
-  //     const emojis = initialData<Emoji>(gridSize)
-  //     const dataFile = new File([JSON.stringify(emojis)], dataFileName)
-  //     const imageFile = new File([await renderGrid(emojis)], imageFileName)
-
-  //     const root = await w3.uploadDirectory([dataFile, imageFile])
-  //     const value = `/ipfs/${root}`
-
-  //     const revision = await Name.v0(name, value)
-  //     await Name.publish(revision, name.key)
-
-  //     emojisCache.set(value, emojis)
-  //     return revision
-  //   }
-  // }, { onFailedAttempt: err => console.warn(`failed to resolve, attempt: ${err.attemptNumber}`) })
-  // console.log(`🔢 revision: ${revision.value}`)
-
-  // let emojis = emojisCache.get(revision.value)
-  // if (!emojis) {
-  //   const url = `${gatewayURL}${revision.value}/${dataFileName}`
-  //   console.log(`🌍 fetching emojis: ${url}`)
-  //   emojis = await retry(async () => {
-  //     const res = await fetch(url, { next: { revalidate: 3600 * 24 /* 24 hours */ } })
-  //     return await res.json() as Emojis
-  //   }, { onFailedAttempt: err => console.warn(`failed to fetch emojis, attempt: ${err.attemptNumber}`) })
-  //   emojisCache.set(revision.value, emojis)
-  // }
-  // console.log('💿 emojis data loaded')
-
-  // try {
-  //   if (!state.code || !state.row || !state.column) {
-  //     throw new Error('missing state')
-  //   }
-
-  //   const { fid, messageHash } = previousFrame.postBody?.untrustedData ?? {}
-  //   if (fid == null || messageHash == null) {
-  //     throw new Error('missing untrustedData')
-  //   }
-
-  //   putEmoji(emojis, fid, messageHash, state.code, state.row - 1, state.column - 1)
-
-  //   console.log(`🎨 rendering image`)
-  //   const dataFile = new File([JSON.stringify(emojis)], dataFileName)
-  //   const imageFile = new File([await renderGrid(emojis)], imageFileName)
-
-  //   console.log(`💾 uploading new data`)
-  //   const root = await w3.uploadDirectory([dataFile, imageFile])
-  //   const value = `/ipfs/${root}`
-    
-  //   console.log(`🔑 updating IPNS ref`)
-  //   revision = await Name.increment(revision, value)
-  //   await Name.publish(revision, name.key)
-  //   console.log(`🔢 new revision: ${value}`)
-
-  //   emojisCache.set(value, emojis)
-  //   console.log('🎉 emojis updated')
-  // } catch (err: any) {
-  //   if (err.message !== 'missing state') {
-  //     console.error(`💥 failed to update emojis`, err)
-  //   }
-  // }
-
-  // return (
-  //   <div className='p-4'>
-  //     frames.js starter kit. The Template Frame is on this page, it&apos;s in
-  //     the html meta tags (inspect source).{' '}
-  //     <Link href={`/debug?url=${baseURL}`} className='underline'>
-  //       Debug
-  //     </Link>
-  //     <FrameContainer
-  //       postUrl='/frames'
-  //       pathname='/'
-  //       state={state}
-  //       previousFrame={previousFrame}
-  //     >
-  //       <FrameImage aspectRatio='1:1' src={`${gatewayURL}${revision.value}/${imageFileName}`} />
-  //       <FrameInput text='emoji,row,column e.g. 😀,1,3' />
-  //       <FrameButton>Place emoji</FrameButton>
-  //     </FrameContainer>
-  //   </div>
-  // )
 }
 
 const renderGrid = async (emojis: Emojis) => {

@@ -1,10 +1,11 @@
 import { base64 } from 'multiformats/bases/base64'
 import { parse as parseLink } from 'multiformats/link'
-import { create as createClient } from '@web3-storage/w3up-client'
+import { Client } from '@web3-storage/w3up-client/client'
 import { StoreMemory } from '@web3-storage/w3up-client/stores/memory'
+import { AgentData } from '@web3-storage/access/agent'
 import { parse as parsePrincipal } from '@ucanto/principal/ed25519'
 import { importDAG } from '@ucanto/core/delegation'
-import { CarBufferReader } from '@ipld/car'
+import { CarBufferReader } from '@ipld/car/buffer-reader'
 
 export type Emojis = Array<Array<Emoji|null>>
 
@@ -29,18 +30,12 @@ export function initialData<T> (size: number) {
 }
 
 export const createW3 = async (key: string, proof: string) => {
-  console.log('createW3...')
-  try {
-    const client = await createClient({ principal: parsePrincipal(key), store: new StoreMemory() })
-    await client.addSpace(await parseProof(proof))
-    return client
-  } catch (err) {
-    console.log(err)
-    throw err
-  }
+  const client = new Client(await AgentData.create({ principal: parsePrincipal(key) }, { store: new StoreMemory() }))
+  await client.addSpace(await parseProof(proof))
+  return client
 }
 
-export const parseProof = async (data: string) => {
+const parseProof = async (data: string) => {
   const link = parseLink(data, base64)
   const reader = CarBufferReader.fromBytes(link.multihash.digest)
   // @ts-expect-error
