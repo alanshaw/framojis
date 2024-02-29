@@ -119,8 +119,8 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
     putEmoji(emojis, fid, messageHash, state.code, state.row - 1, state.column - 1)
 
     console.log(`🎨 rendering image`)
-    const dataFile = new File([JSON.stringify(emojis)], dataFileName)
-    const imageFile = new File([await renderGrid(emojis)], imageFileName)
+    const dataFile = Object.assign(new Blob([JSON.stringify(emojis)]), { name: dataFileName })
+    const imageFile = Object.assign(new Blob([await renderGrid(emojis)]), { name: imageFileName })
 
     console.log(`💾 uploading new data`)
     const root = await w3.uploadDirectory([dataFile, imageFile])
