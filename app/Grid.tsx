@@ -32,17 +32,17 @@ export function Grid ({ emojis }: { emojis: Emojis }) {
   const height = width
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width, height, backgroundColor: 'white' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width, height, backgroundColor: 'white', paddingRight: 10, paddingBottom: 10 }}>
       {rows}
     </div>
   )
 }
 
 export const render = async (emojis: Emojis) => {
-  const width = getWidth(emojis) + 10
+  const width = getWidth(emojis)
   const height = width
   const res = new ImageResponse(<Grid emojis={emojis} />, { width, height })
   return new Uint8Array(await res.arrayBuffer())
 }
 
-export const getWidth = (emojis: Emojis) => (emojis.length + 1) * cellSize
+export const getWidth = (emojis: Emojis) => ((emojis.length + 1) * cellSize) + 10

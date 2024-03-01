@@ -10,6 +10,7 @@ import {
   useFramesReducer,
 } from 'frames.js/next/server'
 import Link from 'next/link'
+import Image from 'next/image'
 import { DEBUG_HUB_OPTIONS } from './debug/constants'
 import emojiRegex from 'emoji-regex'
 import { base64 } from 'multiformats/bases/base64'
@@ -18,7 +19,6 @@ import retry from 'p-retry'
 import { initialData, Emoji, Emojis, createW3, putEmoji } from './lib'
 import { gridSize, dataFileName, imageFileName, gatewayURL } from './constants'
 import * as Grid from './Grid'
-import Image from 'next/image'
 
 type State = {
   code: string

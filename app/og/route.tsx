@@ -28,7 +28,7 @@ export async function GET (request: Request) {
     const emojis = initialData<Emoji>(gridSize)
     addRandomEmojis(20, emojis)
 
-    const width = getWidth(emojis) + 10
+    const width = getWidth(emojis)
     const height = width
  
     const res = new ImageResponse(
