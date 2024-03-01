@@ -6,6 +6,7 @@ import { imageFileName, dataFileName, gatewayURL } from '../constants'
 import { Emojis, createW3, emojisCache } from '../lib'
 import * as Grid from '../Grid'
 
+export const maxDuration = 60
 export const revalidate = 1
 
 const imageCache = new Map()
