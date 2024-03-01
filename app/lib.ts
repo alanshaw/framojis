@@ -60,3 +60,5 @@ export const putEmoji = (emojis: Emojis, fid: number, messageHash: string, code:
   }
   row[columnIndex] = { code, fid, messageHash }
 }
+
+export const emojisCache = new Map<string, Emojis>()

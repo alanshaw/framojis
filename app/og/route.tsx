@@ -19,7 +19,7 @@ function addRandomEmojis (num: number, data: Array<Array<Emoji|null>>) {
     const row = data[rowIndex] ?? []
     const colIndex = randomInt(0, data.length)
     // @ts-expect-error
-    row[colIndex] = { emoji: randomEmoji() }
+    row[colIndex] = { code: randomEmoji() }
   }
 }
  
@@ -32,7 +32,7 @@ export async function GET (request: Request) {
     const height = width
  
     const res = new ImageResponse(
-      <Grid emojis={emojis} />,
+      <Grid emojis={emojis} title='bafybeifaaltd4ebllccjd3dhkh5ek6ycdrmjkwstfsoe5tosff3ejy2rpi' />,
       { width, height },
     )
     const buf = new Uint8Array(await res.arrayBuffer())

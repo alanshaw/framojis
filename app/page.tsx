@@ -16,7 +16,7 @@ import emojiRegex from 'emoji-regex'
 import { base64 } from 'multiformats/bases/base64'
 import * as Name from 'w3name'
 import retry from 'p-retry'
-import { initialData, Emoji, Emojis, createW3, putEmoji } from './lib'
+import { initialData, Emoji, Emojis, createW3, putEmoji, emojisCache } from './lib'
 import { gridSize, dataFileName, imageFileName, gatewayURL } from './constants'
 import * as Grid from './Grid'
 
@@ -27,8 +27,6 @@ type State = {
 }
 
 export const fetchCache = 'force-no-store'
-
-const emojisCache = new Map<string, Emojis>()
 
 const initialState = () => ({ code: '', row: 0, column: 0 })
 
@@ -47,6 +45,13 @@ const reducer: FrameReducer<State> = (state, action) => {
   return { code, row: isNaN(row) ? 0 : row, column: isNaN(column) ? 0 : column }
 }
 
+const w3 = await createW3(process.env.W3_KEY ?? 'missing w3 signer key', process.env.W3_PROOF ?? 'missing w3 proof')
+console.log(`📱 agent: ${w3.agent.did()}`)
+console.log(`📦 space: ${w3.currentSpace()?.did()}`)
+
+const name = await Name.from(base64.decode(process.env.IPNS_KEY ?? 'missing IPNS private key'))
+console.log(`🔑 ref: /ipns/${name}`)
+
 export default async function Home ({ searchParams }: NextServerPageProps) {
   const previousFrame = getPreviousFrame<State>(searchParams)
 
@@ -57,13 +62,6 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
 
   const [state] = useFramesReducer<State>(reducer, initialState(), previousFrame)
   console.log('🧳 state:', state)
-
-  const w3 = await createW3(process.env.W3_KEY ?? 'missing w3 signer key', process.env.W3_PROOF ?? 'missing w3 proof')
-  console.log(`📱 agent: ${w3.agent.did()}`)
-  console.log(`📦 space: ${w3.currentSpace()?.did()}`)
-
-  const name = await Name.from(base64.decode(process.env.IPNS_KEY ?? 'missing IPNS private key'))
-  console.log(`🔑 ref: /ipns/${name}`)
 
   const baseURL = process.env.NEXT_PUBLIC_HOST || 'http://localhost:3000'
 
@@ -77,9 +75,8 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
       console.warn('🆕 initializing data:', err)
       const emojis = initialData<Emoji>(gridSize)
       const dataFile = Object.assign(new Blob([JSON.stringify(emojis)]), { name: dataFileName })
-      const imageFile = Object.assign(new Blob([await Grid.render(emojis)]), { name: imageFileName })
 
-      const root = await w3.uploadDirectory([dataFile, imageFile])
+      const root = await w3.uploadDirectory([dataFile])
       const revision = await Name.v0(name, `/ipfs/${root}`)
 
       await Name.publish(revision, name.key)
@@ -115,12 +112,9 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
 
     putEmoji(emojis, fid, messageHash, state.code, state.row - 1, state.column - 1)
 
-    console.log(`🎨 rendering image`)
+    console.log(`💾 uploading data`)
     const dataFile = Object.assign(new Blob([JSON.stringify(emojis)]), { name: dataFileName })
-    const imageFile = Object.assign(new Blob([await Grid.render(emojis)]), { name: imageFileName })
-
-    console.log(`💾 uploading new data`)
-    const root = await w3.uploadDirectory([dataFile, imageFile])
+    const root = await w3.uploadDirectory([dataFile])
     const value = `/ipfs/${root}`
     
     console.log(`🔑 updating IPNS ref`)
@@ -128,6 +122,7 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
     await Name.publish(revision, name.key)
     console.log(`🔢 new revision: ${value}`)
 
+    emojisCache.clear()
     emojisCache.set(value, emojis)
     console.log('🎉 emojis updated')
     updated = true
