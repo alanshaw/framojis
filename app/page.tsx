@@ -132,19 +132,20 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
     }
   }
 
+  const src = new URL(`/image${updated ? `?load=${encodeURIComponent(revision.value)}` : ''}`, baseURL).toString()
   return (
     <div className='p-4'>
       <Link href={`/debug?url=${baseURL}`} className='underline float-right'>
         Debug
       </Link>
-      <Image src={`${gatewayURL}${revision.value}/${imageFileName}`} alt='framoji grid' width={Grid.getWidth(emojis)/2} height={Grid.getWidth(emojis)/2} />
+      <Image src={src} alt='framoji grid' width={Grid.getWidth(emojis)/2} height={Grid.getWidth(emojis)/2} />
       <FrameContainer
         postUrl='/frames'
         pathname='/'
         state={state}
         previousFrame={previousFrame}
       >
-        <FrameImage aspectRatio='1:1' src={new URL(`/image${updated ? `?load=${encodeURIComponent(revision.value)}` : ''}`, baseURL).toString()} />
+        <FrameImage aspectRatio='1:1' src={src} />
         <FrameInput text='emoji,row,column e.g. 😀,1,3' />
         <FrameButton>Place emoji</FrameButton>
       </FrameContainer>
