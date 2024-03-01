@@ -137,7 +137,7 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
       <Link href={`/debug?url=${baseURL}`} className='underline float-right'>
         Debug
       </Link>
-      <Image src={`${gatewayURL}${revision.value}/${imageFileName}`} alt='framjoi grid' width={Grid.getWidth(emojis)/2} height={Grid.getWidth(emojis)/2} />
+      <Image src={`${gatewayURL}${revision.value}/${imageFileName}`} alt='framoji grid' width={Grid.getWidth(emojis)/2} height={Grid.getWidth(emojis)/2} />
       <FrameContainer
         postUrl='/frames'
         pathname='/'
