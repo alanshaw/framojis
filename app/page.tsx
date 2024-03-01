@@ -149,7 +149,7 @@ export default async function Home ({ searchParams }: NextServerPageProps) {
         state={state}
         previousFrame={previousFrame}
       >
-        <FrameImage aspectRatio='1:1' src={new URL(`/image${updated ? `?${encodeURIComponent(revision.value)}` : ''}`, baseURL).toString()} />
+        <FrameImage aspectRatio='1:1' src={new URL(`/image${updated ? `?load=${encodeURIComponent(revision.value)}` : ''}`, baseURL).toString()} />
         <FrameInput text='emoji,row,column e.g. 😀,1,3' />
         <FrameButton>Place emoji</FrameButton>
       </FrameContainer>

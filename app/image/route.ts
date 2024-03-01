@@ -10,8 +10,9 @@ export async function GET (request: Request) {
   const name = await Name.from(base64.decode(process.env.IPNS_KEY ?? 'missing IPNS private key'))
   console.log(`🔑 ref: /ipns/${name}`)
 
+  let revision: Name.Revision
   try {
-    const revision = await retry(async () => {
+    revision = await retry(async () => {
       console.log(`👀 resolving: /ipns/${name}`)
       return await Name.resolve(name)
     }, {
@@ -29,11 +30,11 @@ export async function GET (request: Request) {
       onFailedAttempt: err => console.warn(err.message),
       retries: 5
     })
-
-    console.log(`🔀 redirecting to: ${gatewayURL}${revision.value}/${imageFileName}`)
-    redirect(`${gatewayURL}${revision.value}/${imageFileName}`)
   } catch (err) {
     console.warn(err)
     return new Response(null, { status: 404 })
   }
+
+  console.log(`🔀 redirecting to: ${gatewayURL}${revision.value}/${imageFileName}`)
+  redirect(`${gatewayURL}${revision.value}/${imageFileName}`)
 }
