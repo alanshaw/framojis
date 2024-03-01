@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import retry from 'p-retry'
 import { imageFileName, gatewayURL } from '../constants'
 
-export const fetchCache = 'force-no-store'
+export const revalidate = 1
 
 export async function GET (request: Request) {
   const name = await Name.from(base64.decode(process.env.IPNS_KEY ?? 'missing IPNS private key'))
