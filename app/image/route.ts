@@ -49,7 +49,12 @@ export async function GET (request: Request) {
     }
 
     console.log(`📩 sending image`)
-    return new Response(imageData, { headers: { 'Content-Type': 'image/png' } })
+    return new Response(imageData, {
+      headers: {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'private, no-cache, no-store, max-age=0'
+      }
+    })
   } catch (err) {
     console.warn(err)
     return new Response(null, { status: 404 })
